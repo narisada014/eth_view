@@ -1,212 +1,212 @@
 <!DOCTYPE html>
 <html lang="ja">
-	<head>
-		<meta charset="UTF-8">
-		<title>Counter</title>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
-		<script type="text/javascript" src="./js/bignumber.min.js"></script>
-		<script type="text/javascript" src="./js/crypto-js.js"></script>
-		<script type="text/javascript" src="./js/utf8.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
-		<script>
-			var url = "http://127.0.0.1:8545";
-			var user_name;
-			if (typeof web3 !== 'undefined') {
-			  web3 = new Web3(web3.currentProvider);
+<head>
+	<meta charset="UTF-8">
+	<title>Counter</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+	<script type="text/javascript" src="./js/bignumber.min.js"></script>
+	<script type="text/javascript" src="./js/crypto-js.js"></script>
+	<script type="text/javascript" src="./js/utf8.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+	<script>
+	var url = "http://127.0.0.1:8545";
+	var user_name;
+	if (typeof web3 !== 'undefined') {
+		web3 = new Web3(web3.currentProvider);
+	} else {
+		// set the provider you want from Web3.providers
+		web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+	}
+	web3.eth.defaultAccount = web3.eth.accounts[0];
+	var ABI = [
+		{
+			"constant": false,
+			"inputs": [],
+			"name": "countUp",
+			"outputs": [],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "getCounterName",
+			"outputs": [
+				{
+					"name": "name",
+					"type": "string"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "getNumberOfCounter",
+			"outputs": [
+				{
+					"name": "number",
+					"type": "uint32"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"name": "name",
+					"type": "string"
+				}
+			],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "constructor"
+		}
+	];
+	var masterABI = [
+		{
+			"constant": false,
+			"inputs": [
+				{
+					"name": "name",
+					"type": "string"
+				}
+			],
+			"name": "addCounter",
+			"outputs": [],
+			"payable": false,
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"constant": true,
+			"inputs": [],
+			"name": "getCounterAddressList",
+			"outputs": [
+				{
+					"name": "counterAddressList",
+					"type": "address[]"
+				}
+			],
+			"payable": false,
+			"stateMutability": "view",
+			"type": "function"
+		}
+	];
+	var master = web3.eth.contract(masterABI).at("0x8aefc79a922b64c3e56a305733b42ab9a4b0c676");
+	var CounterAddressList = master.getCounterAddressList();
+
+	function login() {
+		user_name = $("#userName").val();
+		var password = $("#password").val();
+		var JSONdata = createJSONdata("personal_unlockAccount", [ user_name, password ]);
+		console.log(JSONdata);
+		executeJsonRpc(url, JSONdata, function success(data) {
+			if (data.error == null) {
+				console.log("login success!");
 			} else {
-			  // set the provider you want from Web3.providers
-			  web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+				console.log(data);
+				console.log("login error");
 			}
-			web3.eth.defaultAccount = web3.eth.accounts[0];
-			var ABI = [
-				{
-					"constant": false,
-					"inputs": [],
-					"name": "countUp",
-					"outputs": [],
-					"payable": false,
-					"stateMutability": "nonpayable",
-					"type": "function"
-				},
-				{
-					"constant": true,
-					"inputs": [],
-					"name": "getCounterName",
-					"outputs": [
-						{
-							"name": "name",
-							"type": "string"
-						}
-					],
-					"payable": false,
-					"stateMutability": "view",
-					"type": "function"
-				},
-				{
-					"constant": true,
-					"inputs": [],
-					"name": "getNumberOfCounter",
-					"outputs": [
-						{
-							"name": "number",
-							"type": "uint32"
-						}
-					],
-					"payable": false,
-					"stateMutability": "view",
-					"type": "function"
-				},
-				{
-					"inputs": [
-						{
-							"name": "name",
-							"type": "string"
-						}
-					],
-					"payable": false,
-					"stateMutability": "nonpayable",
-					"type": "constructor"
-				}
-			];
-			var masterABI = [
-				{
-					"constant": false,
-					"inputs": [
-						{
-							"name": "name",
-							"type": "string"
-						}
-					],
-					"name": "addCounter",
-					"outputs": [],
-					"payable": false,
-					"stateMutability": "nonpayable",
-					"type": "function"
-				},
-				{
-					"constant": true,
-					"inputs": [],
-					"name": "getCounterAddressList",
-					"outputs": [
-						{
-							"name": "counterAddressList",
-							"type": "address[]"
-						}
-					],
-					"payable": false,
-					"stateMutability": "view",
-					"type": "function"
-				}
-			];
-			var master = web3.eth.contract(masterABI).at("0x8aefc79a922b64c3e56a305733b42ab9a4b0c676");
-			var CounterAddressList = master.getCounterAddressList();
+			init();
+		}, function error(data) {
+			console.lgo("login error");
+		});
+	}
 
-			function login() {
-				user_name = $("#userName").val();
-				var password = $("#password").val();
-				var JSONdata = createJSONdata("personal_unlockAccount", [ user_name, password ]);
-				console.log(JSONdata);
-				executeJsonRpc(url, JSONdata, function success(data) {
-					if (data.error == null) {
-						console.log("login success!");
-					} else {
-						console.log(data);
-						console.log("login error");
-					}
-					init();
-				}, function error(data) {
-					console.lgo("login error");
-				});
+	function init() {
+		web3.eth.defaultAccount = user_name;
+		var table = document.getElementById('list');
+		for (var i = 0; i < CounterAddressList.length; i++) {
+			var Counter = web3.eth.contract(ABI).at(CounterAddressList[i]);
+			console.log(Counter);
+			var row = table.insertRow();
+			var td = row.insertCell(0);
+			var radioButton1 = document.createElement('input');
+			radioButton1.type = 'radio';
+			radioButton1.name = 'CounterAddress';
+			radioButton1.value = CounterAddressList[i];
+			td.appendChild(radioButton1);
+			td = row.insertCell(1);
+			td.innerHTML = Counter.getCounterName();
+			td = row.insertCell(2);
+			td.innerHTML = Counter.getNumberOfCounter();
+		}
+	}
+
+	function refresh() {
+		web3.eth.defaultAccount = user_name;
+		var table = document.getElementById('list');
+		for (var i = CounterAddressList.length; i > 0; i--) {
+			table.deleteRow(i);
+		}
+		init();
+	}
+
+	function countUp() {
+		web3.eth.defaultAccount = user_name;
+		var targetAddress;
+		var CounterList = document.getElementsByName("CounterAddress");
+		for (i = 0; i < CounterList.length; i++) {
+			if (CounterList[i].checked) {
+				targetAddress = CounterList[i].value;
 			}
+		}
+		var Counter = web3.eth.contract(ABI).at(targetAddress);
+		Counter.countUp();
+	}
 
-			function init() {
-				web3.eth.defaultAccount = user_name;
-				var table = document.getElementById('list');
-				for (var i = 0; i < CounterAddressList.length; i++) {
-					var Counter = web3.eth.contract(ABI).at(CounterAddressList[i]);
-					console.log(Counter);
-					var row = table.insertRow();
-					var td = row.insertCell(0);
-					var radioButton1 = document.createElement('input');
-					radioButton1.type = 'radio';
-					radioButton1.name = 'CounterAddress';
-					radioButton1.value = CounterAddressList[i];
-					td.appendChild(radioButton1);
-					td = row.insertCell(1);
-					td.innerHTML = Counter.getCounterName();
-					td = row.insertCell(2);
-					td.innerHTML = Counter.getNumberOfCounter();
-				}
+	function createJSONdata(method, params) {
+		var JSONdata = {
+			"jsonrpc" : "2.0",
+			"method" : method,
+			"params" : params,
+			"id": 0 //これないと通らない
+		};
+		return JSONdata;
+	}
+
+	function executeJsonRpc(url_exec, JSONdata, success, error) {
+		$.ajax({
+			type: 'post',
+			url: url_exec,
+			data: JSON.stringify(JSONdata),
+			contentType : 'application/JSON',
+			dataType: 'JSON',
+			scriptCharset: 'utf-8',
+			success: function(data) {
+				success(data);
+			},
+			error: function(data) {
+				error(data);
 			}
+		})
+	}
+	</script>
+</head>
+<body>
+	<p>
+		ユーザ名:&nbsp;<input type="text" id="userName"
+		value="0x8e4b8cbfd0d2872152bbfecb9bc0d398ec41fa32">&nbsp;
+		パスワード:&nbsp;<input type="text" id="password"
+		value="testuser1">&nbsp; <input type="button" value="login" onclick="login();" />
+	</p>
 
-			function refresh() {
-				web3.eth.defaultAccount = user_name;
-				var table = document.getElementById('list');
-				for (var i = CounterAddressList.length; i > 0; i--) {
-					table.deleteRow(i);
-				}
-				init();
-			}
-
-			function countUp() {
-				web3.eth.defaultAccount = user_name;
-				var targetAddress;
-				var CounterList = document.getElementsByName("CounterAddress");
-				for (i = 0; i < CounterList.length; i++) {
-					if (CounterList[i].checked) {
-						targetAddress = CounterList[i].value;
-					}
-				}
-				var Counter = web3.eth.contract(ABI).at(targetAddress);
-				Counter.countUp();
-			}
-
-			function createJSONdata(method, params) {
-				var JSONdata = {
-					"jsonrpc" : "2.0",
-					"method" : method,
-					"params" : params,
-					"id": 0 //これないと通らない
-				};
-				return JSONdata;
-			}
-
-			function executeJsonRpc(url_exec, JSONdata, success, error) {
-				$.ajax({
-					type: 'post',
-					url: url_exec,
-					data: JSON.stringify(JSONdata),
-					contentType : 'application/JSON',
-					dataType: 'JSON',
-					scriptCharset: 'utf-8',
-					success: function(data) {
-						success(data);
-					},
-					error: function(data) {
-						error(data);
-					}
-				})
-			}
-		</script>
-	</head>
-	<body>
-		<p>
-			ユーザ名:&nbsp;<input type="text" id="userName"
-			  value="0x8e4b8cbfd0d2872152bbfecb9bc0d398ec41fa32">&nbsp;
-			パスワード:&nbsp;<input type="text" id="password"
-			  value="testuser1">&nbsp; <input type="button" value="login" onclick="login();" />
-		</p>
-
-		<table id="list" border="1">
-			<tr>
-				<th></th>
-				<th>name</th>
-				<th>number of counter</th>
-			</tr>
-		</table>
-		<br />
-		<input type="button" value="countUp" onclick="countUp();" />
-		<br />
-		<input type="button" value="refresh" onclick="refresh();" />
-	</body>
+	<table id="list" border="1">
+		<tr>
+			<th></th>
+			<th>name</th>
+			<th>number of counter</th>
+		</tr>
+	</table>
+	<br />
+	<input type="button" value="countUp" onclick="countUp();" />
+	<br />
+	<input type="button" value="refresh" onclick="refresh();" />
+</body>
 </html>
